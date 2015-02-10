@@ -262,6 +262,9 @@ class ExerciseLogResource(ParentFacilityUserResource):
             # We can't predict the current unit because in some database we have unit_point_reset gift card for unit 101 whereas the current unit is also 101.
             # So we can't find current_unit by saying that the first unit that doesn't have the unit_point_reset gift card is current_unit.
 
+                if bundle.data["unit"] == 0 and bundle.data["timestamp_first"].date() > date(2014, 11, 15):
+                    bundle.data["unit"] = 101
+
             bundle.data["part1_answered"] = AttemptLog.objects.filter(user=user, exercise_id=bundle.data["exercise_id"], context_type__in=["playlist", "exercise"]).count()
             bundle.data["part1_correct"] = AttemptLog.objects.filter(user=user, exercise_id=bundle.data["exercise_id"], correct=True, context_type__in=["playlist", "exercise"]).count()
             bundle.data["part2_attempted"] = AttemptLog.objects.filter(user=user, exercise_id=bundle.data["exercise_id"], context_type__in=["exercise_fixedblock", "playlist_fixedblock"]).count()
