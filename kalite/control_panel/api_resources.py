@@ -262,6 +262,7 @@ class ExerciseLogResource(ParentFacilityUserResource):
             # We can't predict the current unit because in some database we have unit_point_reset gift card for unit 101 whereas the current unit is also 101.
             # So we can't find current_unit by saying that the first unit that doesn't have the unit_point_reset gift card is current_unit.
 
+                # Anything done after Nov 15, 2014 is in the RCT which starts from Unit 101
                 if bundle.data["unit"] == 0 and bundle.data["timestamp_first"].date() > date(2014, 11, 15):
                     bundle.data["unit"] = 101
 
