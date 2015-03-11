@@ -256,14 +256,6 @@ class ExerciseLogResource(ParentFacilityUserResource):
                     if StoreTransactionLog.objects.filter(user=user, context_id=i, context_type="unit_points_reset", purchased_at__gte=bundle.data["timestamp_first"]).count() > 0:
                         bundle.data["unit"] = i
                         break
-            # For entries we are not sure about the unit, we keep them as 0, mostly chances are that the unit would be the current_unit.
-            # As we can't predict the current unit on the central server, its better to have the value as 0.
-            # We can't predict the current unit because in some database we have unit_point_reset gift card for unit 101 whereas the current unit is also 101.
-            # So we can't find current_unit by saying that the first unit that doesn't have the unit_point_reset gift card is current_unit.
-
-                # Anything done after Nov 15, 2014 is in the RCT which starts from Unit 101
-                if bundle.data["unit"] == 0 and bundle.data["timestamp_first"].date() > date(2014, 11, 15):
-                    bundle.data["unit"] = 101
 
             # For entries we are not sure about the unit, we keep them as 0, mostly chances are that the unit would be the current_unit.
             # As we can't predict the current unit on the central server, its better to have the value as 0.
