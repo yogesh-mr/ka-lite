@@ -14,12 +14,10 @@
         var ALL_ZONES_URL = "{{ all_zones_url }}";
         var ALL_FACILITIES_URL = "{% url 'api_dispatch_list' resource_name='facility' %}";
         var ALL_GROUPS_URL = "{% url 'api_dispatch_list' resource_name='group' %}";
-        var FACILITY_USER_CSV_URL = "{% url 'api_dispatch_list' resource_name='facility_user_csv' %}";
-        var TEST_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='test_log_csv' %}";
-        var ATTEMPT_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='attempt_log_csv' %}";
-        var EXERCISE_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='exercise_log_csv' %}";
-        var DEVICE_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='device_log_csv' %}";
-        var STORE_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='store_transaction_log_csv' %}";
+        var SUMMARY_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='summary_log_csv' %}";
+        var VIDEO_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='video_log_csv' %}";
+        var AUDIO_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='audio_log_csv' %}";
+        var PDF_LOG_CSV_URL = "{% url 'api_dispatch_list' resource_name='pdf_log_csv' %}";
     </script>
     <script type="text/javascript" src="{% static 'js/control_panel/data_export.js' %}"></script>
 
@@ -32,7 +30,7 @@
                     group_id: "{{ group_id }}",
                     facility_id: "{{ facility_id }}", 
                     // b/c we hardcode in template, initialize this for state model
-                    resource_id: "facility_user",  
+                    resource_id: "summary_log",  
                     is_central: {{ is_central|lower }}
                 }),
                 org_id: "{{ org_id }}"

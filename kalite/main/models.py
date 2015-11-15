@@ -86,6 +86,10 @@ class VideoLog(DeferredCountSyncedModel):
     def get_points_for_user(user):
         return VideoLog.objects.filter(user=user).aggregate(Sum("points")).get("points__sum", 0) or 0
 
+    @staticmethod
+    def get_total_time_for_user(user):
+        return VideoLog.objects.filter(user=user).aggregate(Sum("total_seconds_watched")).get("total_seconds_watched__sum", 0) or 0
+
     @classmethod
     def calc_points(cls, seconds_watched, video_length):
         return ceil(float(seconds_watched) / video_length* VideoLog.POINTS_PER_VIDEO)
@@ -517,6 +521,10 @@ class ContentLog(DeferredCountSyncedModel):
     @staticmethod
     def get_points_for_user(user):
         return ContentLog.objects.filter(user=user).aggregate(Sum("points")).get("points__sum", 0) or 0
+
+    @staticmethod
+    def get_total_time_for_user(user):
+        return ContentLog.objects.filter(user=user).aggregate(Sum("time_spent")).get("time_spent__sum", 0) or 0
 
 
 @receiver(pre_save, sender=UserLog)

@@ -86,6 +86,9 @@ def compute_total_points(user):
            StoreTransactionLog.get_points_for_user(user) +
            ContentLog.get_points_for_user(user))
 
+def conculate_total_time(user):
+    return(VideoLog.get_total_time_for_user(user) + ContentLog.get_total_time_for_user(user))
+
 
 # On pages with no forms, we want to ensure that the CSRF cookie is set, so that AJAX POST
 # requests will be possible. Since `status` is always loaded, it's a good place for this.

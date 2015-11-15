@@ -14,14 +14,15 @@ from securesync.models import Zone, Device, SyncSession
 
 from kalite.coachreports.views import get_accessible_objects_from_logged_in_user
 from kalite.facility.models import Facility, FacilityGroup, FacilityUser
-from kalite.main.models import AttemptLog, ExerciseLog
+from kalite.main.models import AttemptLog, ExerciseLog, ContentLog, VideoLog, UserLogSummary
 from kalite.shared.api_auth import ObjectAdminAuthorization
 from kalite.store.models import StoreTransactionLog 
 from kalite.student_testing.models import TestLog
 
 from .api_serializers import CSVSerializer
 from store.models import StoreItem 
-
+from kalite import topic_tools
+from kalite.distributed.api_views import compute_total_points, conculate_total_time
 
 # This constant is used as a key for the all facilties drop down in the frontend
 ID_NONE = "None"
@@ -110,7 +111,11 @@ class ParentFacilityUserResource(ModelResource):
 
     def _get_facility_users(self, bundle):
         """Return a dict mapping facility_user_ids to facility user objs, filtered by the zone id(s), facility_id, or group_id"""
-        zone_id = bundle.request.GET.get('zone_id')
+        # zone_id = bundle.request.GET.get('zone_id')
+        if bundle.request.GET.get('zone_id'):
+            zone_id = bundle.request.GET.get('zone_id')
+        else:
+            zone_id = 'need a default id in oder to make <facility all> works'
         zone_ids = bundle.request.GET.get('zone_ids')
         facility_id = bundle.request.GET.get('facility_id')
         group_id = bundle.request.GET.get('group_id')
@@ -175,6 +180,145 @@ class FacilityUserResource(ParentFacilityUserResource):
 
         return to_be_serialized
 
+class SummaryLogResource(ParentFacilityUserResource):
+
+    class Meta:
+        queryset = FacilityUser.objects.all()
+        resource_name = 'summary_log_csv'
+        authorization = ObjectAdminAuthorization()
+        excludes = ['counter', 'signature', 'deleted', 'signed_version', 'device', 'default_language', 'count', 'is_teacher', 'password', 'notes']
+        serializer = CSVSerializer()
+
+    def alter_list_data_to_serialize(self, request, to_be_serialized):
+        """Add username, facility name, and facility ID to responses"""
+        for bundle in to_be_serialized["objects"]:
+            user_id = bundle.data["id"]
+            user = self._get_facility_users(bundle).get(user_id)
+            bundle.data["total_points"] = compute_total_points(user)
+            bundle.data["total_time"] = conculate_total_time(user)
+            bundle.data["username"] = user.username
+            bundle.data["first_name"] = user.first_name
+            bundle.data["last_name"] = user.last_name
+            bundle.data.pop("id")
+            bundle.data.pop("resource_uri")
+
+        return to_be_serialized
+
+class VideoLogResource(ParentFacilityUserResource):
+
+    _facility_users = None
+
+    user = fields.ForeignKey(FacilityUserResource, 'user', full=True)
+
+    class Meta:
+        queryset = VideoLog.objects.all()
+        resource_name = 'video_log_csv'
+        authorization = ObjectAdminAuthorization()
+        excludes = ['counter', 'signature', 'deleted', 'signed_version', 'language', 'completion_counter', 'resource_uri', 'id', 'youtube_id']
+        serializer = CSVSerializer()
+
+    def obj_get_list(self, bundle, **kwargs):
+        self._facility_users = self._get_facility_users(bundle)
+        video_logs = VideoLog.objects.filter(user__id__in=self._facility_users.keys())
+        # if not video_logs:
+        #     raise NotFound("No video logs found.")
+        return super(VideoLogResource, self).authorized_read_list(video_logs, bundle)
+
+    def alter_list_data_to_serialize(self, request, to_be_serialized):
+        """Add username, facility name, and facility ID to responses"""
+        for bundle in to_be_serialized["objects"]:
+            user_id = bundle.data["user"].data["id"]
+            user = self._facility_users.get(user_id)
+            bundle.data["username"] = user.username
+            bundle.data["first_name"] = user.first_name
+            bundle.data["last_name"] = user.last_name
+            bundle.data["content_kind"] = 'video'
+            bundle.data.pop("user")
+            bundle.data.pop("resource_uri")
+
+            video_id = bundle.data.pop("video_id", None)
+            video_title = topic_tools.get_video_data(request, video_id)
+            bundle.data["content_title"] = video_title['title'] if video_title else "content_id: " + content_id
+
+        return to_be_serialized
+
+class AudioLogResource(ParentFacilityUserResource):
+
+    _facility_users = None
+
+    user = fields.ForeignKey(FacilityUserResource, 'user', full=True)
+
+    class Meta:
+        queryset = ContentLog.objects.all()
+        # queryset = ContentLog.objects.filter(content_kind="Audio")
+        resource_name = 'audio_log_csv'
+        authorization = ObjectAdminAuthorization()
+        excludes = ['counter', 'signature', 'deleted', 'signed_version', 'completion_counter', 'content_source', 'extra_fields', 'progress', 'language', 'resource_uri', 'id']
+        serializer = CSVSerializer()
+
+    def obj_get_list(self, bundle, **kwargs):
+        self._facility_users = self._get_facility_users(bundle)
+        audio_logs = ContentLog.objects.filter(user__id__in=self._facility_users.keys(), content_kind="Audio")
+        # if not audio_logs:
+        #     raise NotFound("No audio logs found.")
+        return super(AudioLogResource, self).authorized_read_list(audio_logs, bundle)
+
+    def alter_list_data_to_serialize(self, request, to_be_serialized):
+        """Add username, facility name, and facility ID to responses"""
+        for bundle in to_be_serialized["objects"]:
+            user_id = bundle.data["user"].data["id"]
+            user = self._facility_users.get(user_id)
+            bundle.data["username"] = user.username
+            bundle.data["first_name"] = user.first_name
+            bundle.data["last_name"] = user.last_name
+            bundle.data.pop("user")
+            bundle.data.pop("resource_uri")
+
+            content_id = bundle.data.pop("content_id", None)
+            content_title = topic_tools.get_content_data(request, content_id)
+            bundle.data["content_title"] = content_title['title'] if content_title else "content_id: " + content_id
+
+        return to_be_serialized
+
+class PDFLogResource(ParentFacilityUserResource):
+
+    _facility_users = None
+
+    user = fields.ForeignKey(FacilityUserResource, 'user', full=True)
+
+    class Meta:
+        queryset = ContentLog.objects.all()
+        # queryset = ContentLog.objects.filter(content_kind="Document")
+        resource_name = 'pdf_log_csv'
+        authorization = ObjectAdminAuthorization()
+        excludes = ['counter', 'signature', 'deleted', 'signed_version', 'completion_counter', 'content_source', 'extra_fields', 'progress', 'language', 'resource_uri', 'id', 'time_spent']
+        serializer = CSVSerializer()
+
+    def obj_get_list(self, bundle, **kwargs):
+        self._facility_users = self._get_facility_users(bundle)
+        pdf_logs = ContentLog.objects.filter(user__id__in=self._facility_users.keys(), content_kind="Document")
+        # if not pdf_logs:
+        #     raise NotFound("No pdf logs found.")
+        return super(PDFLogResource, self).authorized_read_list(pdf_logs, bundle)
+
+    def alter_list_data_to_serialize(self, request, to_be_serialized):
+        """Add username, facility name, and facility ID to responses"""
+        for bundle in to_be_serialized["objects"]:
+            user_id = bundle.data["user"].data["id"]
+            user = self._facility_users.get(user_id)
+            bundle.data["username"] = user.username
+            bundle.data["first_name"] = user.first_name
+            bundle.data["last_name"] = user.last_name
+            bundle.data.pop("user")
+            bundle.data.pop("resource_uri")
+
+            content_id = bundle.data.pop("content_id", None)
+            content_title = topic_tools.get_content_data(request, content_id)
+            bundle.data["content_title"] = content_title['title'] if content_title else "content_id: " + content_id
+
+        return to_be_serialized
+
+# ! below are the Resources we do not use in wch !
 
 class TestLogResource(ParentFacilityUserResource):
 
