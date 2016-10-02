@@ -92,7 +92,7 @@ Use following command to start/stop KA-LITE::
      # Stopping KA-LITE 
      sudo service ka-lite stop (kalite also works)
 
-If videos are downloaded in bulk then it needs to be copied to the folder ``/home/pi/.kalite/content``.After copying the files Use the Scan content folder for Videos. The tree will turn green for all the videos that are available in the content folder. Time taken for the scan to complete depends on the number of videos in the content folder, for a complete 34 GB of downloaded videos it can take more than 2 hours on Raspberry Pi 3. It may take longer for earlier version on Raspberry Pi.
+If videos are downloaded in bulk then it needs to be copied to the folder ``/home/pi/.kalite/content``(if .kalite folder is not visible in /home/pi folder, then go to View in menu bar and tick "Show Hidden" option).After copying the files Use the Scan content folder for Videos. The tree will turn green for all the videos that are available in the content folder. Time taken for the scan to complete depends on the number of videos in the content folder, for a complete 34 GB of downloaded videos it can take more than 2 hours on Raspberry Pi 3. It may take longer for earlier version on Raspberry Pi.
 
 .. image:: After_Video_Scan.png
   :class: screenshot
